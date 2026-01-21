@@ -1,0 +1,7 @@
+
+    Time: 2026-01-21T21:57:41.914Z
+    Root Env Path: D:\Downloads\policy-pal-main\policy-pal-main\.env
+    Files found in Root: .env, .gitignore, .qodo, BACKEND_REFERENCE.md, bun.lockb, components.json, eslint.config.js, index.html, node_modules, package-lock.json, package.json, postcss.config.js, public, README.md, server, src, supabase, tailwind.config.ts, tsconfig.app.json, tsconfig.json, tsconfig.node.json, vite.config.ts
+    SUPABASE_URL present: true
+    VITE_SUPABASE_URL present: true
+    

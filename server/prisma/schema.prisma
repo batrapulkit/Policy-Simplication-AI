@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User table for login credentials (as requested)
+// Note: When using Supabase Auth, these are typically stored in auth.users,
+// but we create this table to satisfy the explicit request for a table.
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password_hash String?  // Optional if using Supabase Auth
+  fullName      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Policy table to store uploaded PDF metadata
+model Policy {
+  id            String             @id @default(cuid())
+  userId        String?            // Optional link to User
+  policyNumber  String?
+  carrier       String?
+  effectiveDate DateTime?
+  expiryDate    DateTime?
+  pdfUrl        String             // The URL of the uploaded PDF
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  extractions   PolicyExtraction[]
+}
+
+// Extraction table to store AI responses
+model PolicyExtraction {
+  id          String   @id @default(cuid())
+  policyId    String
+  rawText     String   @db.Text   // The extracted text
+  summaryJson Json?    // The AI response (structured data)
+  createdAt   DateTime @default(now())
+  policy      Policy   @relation(fields: [policyId], references: [id])
+}

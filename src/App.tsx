@@ -6,6 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Extractions from "./pages/Extractions";
@@ -25,7 +30,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
             <Route path="/login" element={<Login />} />
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />

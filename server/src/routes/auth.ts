@@ -92,32 +92,64 @@ router.post('/signup', authLimiter, async (req: Request, res: Response) => {
         });
 
         if (error) {
+            console.error('Supabase Signup Error:', error.message);
             return res.status(400).json({ message: error.message });
         }
 
         if (data.session) {
-            // Manual Insert into user_profiles to store details (and password as requested)
-            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
-            // Create a client with service role to bypass RLS for this system operation
-            const adminClient = createClient(supabaseUrl!, serviceKey!, {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
+            // Use the user's access token to insert into user_profiles
+            // This satisfies the RLS policy: auth.uid() = id
+            const userClient = createClient(supabaseUrl!, supabaseKey!, {
+                global: {
+                    headers: {
+                        Authorization: `Bearer ${data.session.access_token}`
+                    }
                 }
             });
 
-            const { error: profileError } = await adminClient
+            const { error: profileError } = await userClient
                 .from('user_profiles')
                 .insert({
                     id: data.user!.id,
                     email: email,
                     full_name: fullName,
-                    password: password // Storing as requested by user
+                    password: password
                 });
 
             if (profileError) {
-                console.error('Failed to create user profile:', profileError);
-                // Continue anyway, don't block signup
+                console.error('CRITICAL: Failed to create user profile:', profileError);
+                // Return success anyway for the auth part, but log the error
+            } else {
+                console.log('SUCCESS: User profile created in public.user_profiles');
+
+                // Initialize Company Settings for the user
+                const { error: settingsError } = await userClient
+                    .from('company_settings')
+                    .insert({
+                        user_id: data.user!.id,
+                        company_name: 'My Company', // Default
+                    });
+
+                if (settingsError) {
+                    console.error('Failed to init company settings:', settingsError);
+                } else {
+                    console.log('SUCCESS: Company settings initialized');
+                }
+
+                // Initialize Default Client
+                const { error: clientError } = await userClient
+                    .from('clients')
+                    .insert({
+                        user_id: data.user!.id,
+                        name: 'General Client', // Default
+                        notes: 'Automatically created default client'
+                    });
+
+                if (clientError) {
+                    console.error('Failed to init default client:', clientError);
+                } else {
+                    console.log('SUCCESS: Default client initialized');
+                }
             }
 
             res.json({
@@ -130,7 +162,9 @@ router.post('/signup', authLimiter, async (req: Request, res: Response) => {
                 }
             });
         } else {
-            // Email confirmation required
+            // Email confirmation required (No Session)
+            console.warn('Signup successful but no session returned. Profile creation skipped because we do not have a Service Role Key.');
+
             res.json({
                 message: 'Signup successful. Please check your email for confirmation.',
                 user: data.user ? {

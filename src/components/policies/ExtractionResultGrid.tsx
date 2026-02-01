@@ -338,7 +338,7 @@ export function ExtractionResultGrid({ summary, id }: ExtractionResultGridProps)
                             <Card className="cursor-help hover:border-primary/50 transition-colors">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <FileText className="h-4 w-4 text-indigo-500" />
+                                        <FileText className="h-4 w-4 text-blue-500" />
                                         Endorsements
                                     </CardTitle>
                                 </CardHeader>
@@ -347,7 +347,7 @@ export function ExtractionResultGrid({ summary, id }: ExtractionResultGridProps)
                                         {summary.important_conditions.length > 0 ? (
                                             summary.important_conditions.slice(0, 3).map((cond, i) => (
                                                 <li key={i} className="text-sm flex items-start gap-2">
-                                                    <Info className="h-3 w-3 text-indigo-500 shrink-0 mt-1" />
+                                                    <Info className="h-3 w-3 text-blue-500 shrink-0 mt-1" />
                                                     <TermWithTooltip text={cond} className="line-clamp-2 text-muted-foreground" />
                                                 </li>
                                             ))

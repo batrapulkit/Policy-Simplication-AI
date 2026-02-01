@@ -68,6 +68,9 @@ export default function Login() {
       }
     } catch (err: any) {
       let message = err.message || 'Authentication failed';
+      if (message.includes('Email not confirmed')) {
+        message = 'Email not confirmed. Please check your inbox or disable "Confirm email" in Supabase -> Authentication -> Providers.';
+      }
       setError(message);
     } finally {
       setIsLoading(false);

@@ -27,7 +27,7 @@ const Features = () => {
             icon: Sparkles,
             title: 'AI-Powered Extraction',
             description: 'Upload any policy document and watch our AI extract key information instantly.',
-            color: 'from-indigo-500 to-blue-500',
+            color: 'from-blue-500 to-blue-600',
             details: [
                 'Automatic data extraction from PDFs',
                 'Support for all major policy formats',
@@ -39,7 +39,7 @@ const Features = () => {
             icon: Brain,
             title: 'Intelligent Analysis',
             description: 'Get comprehensive insights and summaries from complex policy documents.',
-            color: 'from-purple-500 to-indigo-500',
+            color: 'from-purple-500 to-blue-500',
             details: [
                 'Natural language summaries',
                 'Risk assessment and analysis',
@@ -109,35 +109,39 @@ const Features = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-blue-50">
             {/* Navigation */}
             <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <Link to="/" className="flex items-center space-x-2">
-                            <FileText className="h-8 w-8 text-indigo-600" />
-                            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                                We are Pratik
+                            <img
+                                src="/WRP-New LOGO.jpg"
+                                alt="WearePratik Logo"
+                                className="h-10 w-auto object-contain"
+                            />
+                            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
+                                WearePratik
                             </span>
                         </Link>
                         <div className="hidden md:flex items-center space-x-8">
-                            <Link to="/" className="text-slate-700 hover:text-indigo-600 transition-colors font-medium">
+                            <Link to="/" className="text-slate-700 hover:text-blue-600 transition-colors font-medium">
                                 Home
                             </Link>
-                            <Link to="/features" className="text-indigo-600 font-medium">
+                            <Link to="/features" className="text-blue-600 font-medium">
                                 Features
                             </Link>
-                            <Link to="/pricing" className="text-slate-700 hover:text-indigo-600 transition-colors font-medium">
+                            <Link to="/pricing" className="text-slate-700 hover:text-blue-600 transition-colors font-medium">
                                 Pricing
                             </Link>
-                            <Link to="/about" className="text-slate-700 hover:text-indigo-600 transition-colors font-medium">
+                            <Link to="/about" className="text-slate-700 hover:text-blue-600 transition-colors font-medium">
                                 About
                             </Link>
-                            <Link to="/contact" className="text-slate-700 hover:text-indigo-600 transition-colors font-medium">
+                            <Link to="/contact" className="text-slate-700 hover:text-blue-600 transition-colors font-medium">
                                 Contact
                             </Link>
                             <Link to="/login">
-                                <Button variant="outline" className="border-indigo-200 hover:bg-indigo-50">
+                                <Button variant="outline" className="border-blue-200 hover:bg-blue-50">
                                     Login
                                 </Button>
                             </Link>
@@ -159,13 +163,13 @@ const Features = () => {
             {/* Hero Section */}
             <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto text-center">
-                    <Badge className="mb-4 bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+                    <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-200">
                         Comprehensive Feature Set
                     </Badge>
                     <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6">
                         Everything You Need to
                         <br />
-                        <span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
                             Master Policy Management
                         </span>
                     </h1>
@@ -182,7 +186,7 @@ const Features = () => {
                         {features.map((feature, index) => (
                             <Card
                                 key={index}
-                                className="border-2 border-slate-100 hover:border-indigo-200 hover:shadow-xl transition-all duration-300 group"
+                                className="border-2 border-slate-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 group"
                             >
                                 <CardHeader>
                                     <div className={`h-14 w-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
@@ -199,7 +203,7 @@ const Features = () => {
                                     <ul className="space-y-3">
                                         {feature.details.map((detail, idx) => (
                                             <li key={idx} className="flex items-start space-x-3">
-                                                <CheckCircle className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                                                <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                                                 <span className="text-slate-700">{detail}</span>
                                             </li>
                                         ))}
@@ -226,10 +230,10 @@ const Features = () => {
                         {additionalFeatures.map((item, index) => (
                             <div
                                 key={index}
-                                className="flex items-center space-x-3 bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all"
+                                className="flex items-center space-x-3 bg-white p-4 rounded-xl border border-slate-200 hover:border-blue-200 hover:shadow-md transition-all"
                             >
-                                <div className="h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <item.icon className="h-5 w-5 text-indigo-600" />
+                                <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <item.icon className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <span className="text-slate-700 font-medium">{item.text}</span>
                             </div>
@@ -249,7 +253,7 @@ const Features = () => {
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         {['PDF', 'Excel', 'Word', 'Cloud Storage', 'Email', 'CRM', 'API', 'Webhooks'].map((integration, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-xl border-2 border-slate-100 hover:border-indigo-200 transition-all">
+                            <div key={idx} className="bg-white p-6 rounded-xl border-2 border-slate-100 hover:border-blue-200 transition-all">
                                 <p className="font-semibold text-slate-900">{integration}</p>
                             </div>
                         ))}
@@ -260,12 +264,12 @@ const Features = () => {
             {/* CTA Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto">
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-12 text-center shadow-2xl">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-600 rounded-3xl p-12 text-center shadow-2xl">
                         <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
                             Ready to Experience All These Features?
                         </h2>
-                        <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-                            Start your free trial today and see how We are Pratik transforms your workflow
+                        <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                            Start your free trial today and see how WearePratik transforms your workflow
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link to="/login">
@@ -295,8 +299,12 @@ const Features = () => {
                     <div className="grid md:grid-cols-4 gap-8 mb-8">
                         <div>
                             <div className="flex items-center space-x-2 mb-4">
-                                <FileText className="h-6 w-6 text-indigo-400" />
-                                <span className="text-xl font-bold text-white">We are Pratik</span>
+                                <img
+                                    src="/WRP-New LOGO.jpg"
+                                    alt="WearePratik Logo"
+                                    className="h-8 w-auto object-contain"
+                                />
+                                <span className="text-xl font-bold text-white">WearePratik</span>
                             </div>
                             <p className="text-slate-400">
                                 Simplifying insurance policies with AI-powered intelligence.
@@ -305,30 +313,30 @@ const Features = () => {
                         <div>
                             <h4 className="text-white font-semibold mb-4">Product</h4>
                             <ul className="space-y-2">
-                                <li><Link to="/features" className="hover:text-indigo-400 transition-colors">Features</Link></li>
-                                <li><Link to="/pricing" className="hover:text-indigo-400 transition-colors">Pricing</Link></li>
-                                <li><Link to="/about" className="hover:text-indigo-400 transition-colors">About</Link></li>
+                                <li><Link to="/features" className="hover:text-blue-400 transition-colors">Features</Link></li>
+                                <li><Link to="/pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
+                                <li><Link to="/about" className="hover:text-blue-400 transition-colors">About</Link></li>
                             </ul>
                         </div>
                         <div>
                             <h4 className="text-white font-semibold mb-4">Company</h4>
                             <ul className="space-y-2">
-                                <li><Link to="/about" className="hover:text-indigo-400 transition-colors">About Us</Link></li>
-                                <li><Link to="/contact" className="hover:text-indigo-400 transition-colors">Contact</Link></li>
-                                <li><a href="#" className="hover:text-indigo-400 transition-colors">Careers</a></li>
+                                <li><Link to="/about" className="hover:text-blue-400 transition-colors">About Us</Link></li>
+                                <li><Link to="/contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
+                                <li><a href="#" className="hover:text-blue-400 transition-colors">Careers</a></li>
                             </ul>
                         </div>
                         <div>
                             <h4 className="text-white font-semibold mb-4">Legal</h4>
                             <ul className="space-y-2">
-                                <li><a href="#" className="hover:text-indigo-400 transition-colors">Privacy Policy</a></li>
-                                <li><a href="#" className="hover:text-indigo-400 transition-colors">Terms of Service</a></li>
-                                <li><a href="#" className="hover:text-indigo-400 transition-colors">Cookie Policy</a></li>
+                                <li><Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
+                                <li><Link to="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
+                                <li><Link to="/privacy" className="hover:text-blue-400 transition-colors">Cookie Policy</Link></li>
                             </ul>
                         </div>
                     </div>
                     <div className="border-t border-slate-800 pt-8 text-center text-slate-400">
-                        <p>&copy; 2026 We are Pratik. All rights reserved.</p>
+                        <p>&copy; 2026 WearePratik. All rights reserved.</p>
                     </div>
                 </div>
             </footer>

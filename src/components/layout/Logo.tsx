@@ -10,7 +10,7 @@ export function Logo({ className, iconOnly = false }: LogoProps) {
   const { settings } = useCompanySettings();
 
   const companyName = settings?.company_name || 'WearePratik';
-  const logoUrl = settings?.logo_url;
+  const logoUrl = settings?.logo_url || '/WRP-New LOGO.jpg';
   const initial = companyName.charAt(0).toUpperCase();
 
   return (

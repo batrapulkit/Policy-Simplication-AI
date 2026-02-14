@@ -19,7 +19,37 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy for Digital Ocean
 app.set('trust proxy', 1);
 
-// 1. Security Headers (Helmet)
+// ============================================
+// STATIC FILES - MUST BE FIRST (before Helmet)
+// ============================================
+const buildPath = path.join(__dirname, 'public');
+console.log('Static files path:', buildPath);
+console.log('Static files exist:', fs.existsSync(buildPath));
+
+if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
+    console.log('Serving static files from:', buildPath);
+
+    // Serve static files BEFORE any other middleware
+    app.use(express.static(buildPath, {
+        maxAge: '1h',
+        setHeaders: (res, filePath) => {
+            // Explicitly set correct MIME types
+            if (filePath.endsWith('.css')) {
+                res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+            } else if (filePath.endsWith('.js') || filePath.endsWith('.mjs')) {
+                res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+            } else if (filePath.endsWith('.svg')) {
+                res.setHeader('Content-Type', 'image/svg+xml');
+            } else if (filePath.endsWith('.json')) {
+                res.setHeader('Content-Type', 'application/json');
+            }
+        }
+    }));
+}
+
+// ============================================
+// SECURITY & MIDDLEWARE (after static files)
+// ============================================
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -37,22 +67,17 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
 }));
 
-// 2. CORS Configuration
 app.use(cors(corsOptions));
-
-// 3. Body & Cookie Parsing
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 
-// 4. Global Rate Limiting
+// ============================================
+// API ROUTES
+// ============================================
 app.use('/api', apiLimiter);
-
-// 5. Routes
-// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Protected Route Example
 app.get('/api/protected', authMiddleware, (req, res) => {
     res.json({
         message: 'This is a protected route',
@@ -60,52 +85,18 @@ app.get('/api/protected', authMiddleware, (req, res) => {
     });
 });
 
-// 6. Serve static files from the React app
-// The build script copies dist/ into server/dist/public/
-// So __dirname (server/dist) + /public always has the frontend build
-const buildPath = path.join(__dirname, 'public');
-
-console.log('Static files path:', buildPath);
-console.log('Static files exist:', fs.existsSync(buildPath));
-if (fs.existsSync(buildPath)) {
-    console.log('Static files contents:', fs.readdirSync(buildPath));
-}
-
+// ============================================
+// SPA CATCH-ALL (must be after API routes)
+// ============================================
 if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
-    console.log('Serving static files from:', buildPath);
-    app.use(express.static(buildPath, {
-        setHeaders: (res, filePath) => {
-            if (filePath.endsWith('.css')) {
-                res.setHeader('Content-Type', 'text/css');
-            } else if (filePath.endsWith('.js')) {
-                res.setHeader('Content-Type', 'application/javascript');
-            } else if (filePath.endsWith('.svg')) {
-                res.setHeader('Content-Type', 'image/svg+xml');
-            }
-        }
-    }));
-
-    // SPA catchall: serve index.html for all non-API routes
-    app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api')) {
-            return next();
-        }
+    app.get('*', (req, res) => {
         res.sendFile(path.join(buildPath, 'index.html'));
     });
-} else {
-    console.error('Frontend build not found at:', buildPath);
-    app.get('/', (req, res) => {
-        res.status(500).json({
-            error: 'Frontend build not found',
-            expectedPath: buildPath,
-            dirname: __dirname,
-            cwd: process.cwd(),
-            dirContents: fs.existsSync(__dirname) ? fs.readdirSync(__dirname) : 'dirname not found'
-        });
-    });
 }
 
-// Error Handling Middleware
+// ============================================
+// ERROR HANDLING
+// ============================================
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
         return res.status(400).json({
@@ -123,11 +114,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
         error: err.name || 'Error',
         message: err.message || 'Internal Server Error',
     });
-});
-
-// 404 Handler
-app.use((req, res) => {
-    res.status(404).json({ message: 'Not Found' });
 });
 
 // Start Server

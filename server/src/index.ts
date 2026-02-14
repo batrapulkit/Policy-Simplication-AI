@@ -46,9 +46,16 @@ app.use('/api', apiLimiter);
 // Serve static files from the React app
 // Debugging: Log directory structure
 import fs from 'fs';
-const buildPath = path.join(__dirname, '../../dist');
+
+// Try to resolve buildPath from multiple common locations
+let buildPath = path.join(__dirname, '../../dist');
+if (!fs.existsSync(buildPath)) {
+    // Try relative to CWD
+    buildPath = path.join(process.cwd(), '../dist');
+}
 
 console.log('DEBUG: __dirname is:', __dirname);
+console.log('DEBUG: CWD is:', process.cwd());
 console.log('DEBUG: buildPath resolved to:', buildPath);
 
 try {
@@ -63,8 +70,7 @@ try {
     } else {
         console.error('DEBUG: buildPath NOT found at:', buildPath);
         // Fallback: try to find dist in other common locations relative to current working directory
-        console.log('DEBUG: CWD is:', process.cwd());
-        console.log('DEBUG: Root contents:', fs.readdirSync(process.cwd()));
+        console.error('DEBUG: Root contents:', fs.readdirSync(path.join(process.cwd(), '../')));
     }
 } catch (err) {
     console.error('DEBUG: Error checking filesystem:', err);
@@ -93,7 +99,16 @@ app.get('*', (req, res, next) => {
     const indexPath = path.join(buildPath, 'index.html');
     if (!fs.existsSync(indexPath)) {
         console.error('Frontend build not found at:', indexPath);
-        return res.status(500).send('Frontend build not found. Please check server logs.');
+        // Return debug info to client
+        const debugInfo = {
+            error: 'Frontend build not found',
+            resolvedPath: buildPath,
+            cwd: process.cwd(),
+            dirname: __dirname,
+            structure_at_cwd: fs.readdirSync(process.cwd()),
+            structure_at_parent: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible'
+        };
+        return res.status(500).json(debugInfo);
     }
     res.sendFile(indexPath);
 });

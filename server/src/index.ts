@@ -12,6 +12,24 @@ import { apiLimiter } from './middleware/rateLimiter';
 import { authMiddleware } from './middleware/auth';
 import authRoutes from './routes/auth';
 import aiRoutes from './routes/ai';
+// Diagnostic logging
+console.log('--- DIAGNOSTIC START ---');
+try {
+    console.log('__dirname:', __dirname);
+    console.log('process.cwd():', process.cwd());
+    const levels = ['./', '../', '../../', '../../../'];
+    levels.forEach(level => {
+        const p = path.resolve(__dirname, level);
+        if (fs.existsSync(p)) {
+            console.log(`Contents of ${level} (${p}):`, fs.readdirSync(p));
+        } else {
+            console.log(`${level} (${p}) does not exist`);
+        }
+    });
+} catch (e) {
+    console.error('Error logging diagnostics:', e);
+}
+console.log('--- DIAGNOSTIC END ---');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

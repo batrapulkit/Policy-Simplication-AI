@@ -16,6 +16,9 @@ import aiRoutes from './routes/ai';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy for Digital Ocean
+app.set('trust proxy', 1);
+
 // 1. Security Headers (Helmet)
 app.use(helmet({
     contentSecurityPolicy: {
@@ -30,6 +33,8 @@ app.use(helmet({
             upgradeInsecureRequests: [],
         },
     },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
 }));
 
 // 2. CORS Configuration
@@ -68,9 +73,19 @@ if (fs.existsSync(buildPath)) {
 
 if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
     console.log('Serving static files from:', buildPath);
-    app.use(express.static(buildPath));
+    app.use(express.static(buildPath, {
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.css')) {
+                res.setHeader('Content-Type', 'text/css');
+            } else if (filePath.endsWith('.js')) {
+                res.setHeader('Content-Type', 'application/javascript');
+            } else if (filePath.endsWith('.svg')) {
+                res.setHeader('Content-Type', 'image/svg+xml');
+            }
+        }
+    }));
 
-    // SPA catchall: serve index.html for all non-API, non-asset routes
+    // SPA catchall: serve index.html for all non-API routes
     app.get('*', (req, res, next) => {
         if (req.path.startsWith('/api')) {
             return next();

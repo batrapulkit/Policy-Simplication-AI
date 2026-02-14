@@ -8,8 +8,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
         'http://localhost:8081',
         'http://127.0.0.1:5173',
         'http://127.0.0.1:8080',
-        'http://127.0.0.1:8081'
-    ]; // All common Vite dev server ports and localhost variations
+        'http://127.0.0.1:8081',
+        'https://wearepratik-7whbc.ondigitalocean.app'
+    ]; // All common Vite dev server ports and production URL
 
 export const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {

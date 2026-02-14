@@ -20,10 +20,10 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.googletagmanager.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.googletagmanager.com", "https://www.clarity.ms"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            imgSrc: ["'self'", "data:", "https:", "blob:"],
-            connectSrc: ["'self'", "https://www.googletagmanager.com", "https://*.supabase.co", "https://api.openai.com"],
+            imgSrc: ["'self'", "data:", "https:", "blob:", "https://www.clarity.ms"],
+            connectSrc: ["'self'", "https://www.googletagmanager.com", "https://*.supabase.co", "https://api.openai.com", "https://www.google-analytics.com", "https://*.clarity.ms"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: [],
@@ -44,8 +44,31 @@ app.use('/api', apiLimiter);
 // 5. Routes
 
 // Serve static files from the React app
+// Debugging: Log directory structure
+import fs from 'fs';
 const buildPath = path.join(__dirname, '../../dist');
-console.log('Serving static files from:', buildPath);
+
+console.log('DEBUG: __dirname is:', __dirname);
+console.log('DEBUG: buildPath resolved to:', buildPath);
+
+try {
+    if (fs.existsSync(buildPath)) {
+        console.log('DEBUG: buildPath exists. Contents:', fs.readdirSync(buildPath));
+        const assetsPath = path.join(buildPath, 'assets');
+        if (fs.existsSync(assetsPath)) {
+            console.log('DEBUG: assets folder exists. Contents:', fs.readdirSync(assetsPath));
+        } else {
+            console.log('DEBUG: assets folder NOT found at:', assetsPath);
+        }
+    } else {
+        console.error('DEBUG: buildPath NOT found at:', buildPath);
+        // Fallback: try to find dist in other common locations relative to current working directory
+        console.log('DEBUG: CWD is:', process.cwd());
+        console.log('DEBUG: Root contents:', fs.readdirSync(process.cwd()));
+    }
+} catch (err) {
+    console.error('DEBUG: Error checking filesystem:', err);
+}
 
 app.use(express.static(buildPath));
 
@@ -68,9 +91,9 @@ app.get('*', (req, res, next) => {
         return next();
     }
     const indexPath = path.join(buildPath, 'index.html');
-    if (!require('fs').existsSync(indexPath)) {
+    if (!fs.existsSync(indexPath)) {
         console.error('Frontend build not found at:', indexPath);
-        return res.status(404).send('Frontend build not found. Please run npm run build.');
+        return res.status(500).send('Frontend build not found. Please check server logs.');
     }
     res.sendFile(indexPath);
 });

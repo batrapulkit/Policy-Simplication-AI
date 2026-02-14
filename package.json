@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"vite\"",
-    "build": "npm install && npm install --prefix server && vite build && npm run build --prefix server",
+    "build": "npm install && npm install --prefix server && vite build && npm run build --prefix server && node -e \"const fs=require('fs');const path=require('path');function copyDir(s,d){fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s,{withFileTypes:true})){const sp=path.join(s,f.name);const dp=path.join(d,f.name);f.isDirectory()?copyDir(sp,dp):fs.copyFileSync(sp,dp)}}copyDir('dist','server/dist/public')\"",
     "start": "npm run start --prefix server",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

@@ -12,29 +12,9 @@ import { apiLimiter } from './middleware/rateLimiter';
 import { authMiddleware } from './middleware/auth';
 import authRoutes from './routes/auth';
 import aiRoutes from './routes/ai';
-// Diagnostic logging
-console.log('--- DIAGNOSTIC START ---');
-try {
-    console.log('__dirname:', __dirname);
-    console.log('process.cwd():', process.cwd());
-    const levels = ['./', '../', '../../', '../../../'];
-    levels.forEach(level => {
-        const p = path.resolve(__dirname, level);
-        if (fs.existsSync(p)) {
-            console.log(`Contents of ${level} (${p}):`, fs.readdirSync(p));
-        } else {
-            console.log(`${level} (${p}) does not exist`);
-        }
-    });
-} catch (e) {
-    console.error('Error logging diagnostics:', e);
-}
-console.log('--- DIAGNOSTIC END ---');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-// DigitalOcean sets PORT, use that to detect production, or NODE_ENV
-const isProduction = process.env.NODE_ENV === 'production' || !!process.env.PORT;
 
 // 1. Security Headers (Helmet)
 app.use(helmet({
@@ -75,112 +55,42 @@ app.get('/api/protected', authMiddleware, (req, res) => {
     });
 });
 
-// Serve static files from the React app (Production Only)
-if (isProduction) {
-    // Helper to find the frontend build directory
-    const findBuildPath = () => {
-        const potentialPaths = [
-            path.join(__dirname, '../../dist'), // Standard structure (server/dist -> ../../dist)
-            path.join(__dirname, '../dist'), // Sibling to src (server/src -> ../dist)
-            path.join(process.cwd(), 'dist'), // Root build relative to CWD
-            path.join(process.cwd(), '../dist'),
-            path.join(__dirname, '../../../dist'), // One level up
-        ];
+// 6. Serve static files from the React app
+// The build script copies dist/ into server/dist/public/
+// So __dirname (server/dist) + /public always has the frontend build
+const buildPath = path.join(__dirname, 'public');
 
-        for (const p of potentialPaths) {
-            if (fs.existsSync(path.join(p, 'index.html'))) {
-                return p;
-            }
+console.log('Static files path:', buildPath);
+console.log('Static files exist:', fs.existsSync(buildPath));
+if (fs.existsSync(buildPath)) {
+    console.log('Static files contents:', fs.readdirSync(buildPath));
+}
+
+if (fs.existsSync(buildPath) && fs.existsSync(path.join(buildPath, 'index.html'))) {
+    console.log('Serving static files from:', buildPath);
+    app.use(express.static(buildPath));
+
+    // SPA catchall: serve index.html for all non-API, non-asset routes
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+            return next();
         }
-
-        // Recursive search fallback (manual implementation)
-        try {
-            const root = path.resolve(__dirname, '../../');
-
-            // Manual recursive function to avoid TS/Node version issues
-            const findDist = (dir: string, depth: number): string | null => {
-                if (depth > 3) return null;
-                try {
-                    const files = fs.readdirSync(dir, { withFileTypes: true });
-                    for (const file of files) {
-                        const fullPath = path.join(dir, file.name);
-                        if (file.isDirectory()) {
-                            // Check if this directory is the 'dist' folder we are looking for
-                            if (file.name === 'dist' && fs.existsSync(path.join(fullPath, 'index.html'))) {
-                                return fullPath;
-                            }
-                            // Recurse, but skip node_modules and hidden dotfiles
-                            if (file.name !== 'node_modules' && !file.name.startsWith('.')) {
-                                const found = findDist(fullPath, depth + 1);
-                                if (found) return found;
-                            }
-                        }
-                    }
-                } catch (err) {
-                    // Ignore access errors
-                }
-                return null;
-            };
-
-            const found = findDist(root, 0);
-            if (found) {
-                return found;
-            }
-
-        } catch (e) {
-            console.error('Recursive search failed', e);
-        }
-
-        return null;
-    };
-
-    const buildPath = findBuildPath();
-
-    if (buildPath) {
-        console.log('Production mode: Serving static files from:', buildPath);
-        app.use(express.static(buildPath));
-
-        // The "catchall" handler: for any request that doesn't
-        // match one above, send back React's index.html file.
-        app.get('*', (req, res, next) => {
-            if (req.path.startsWith('/api')) {
-                return next();
-            }
-
-            // Do NOT serve index.html for static assets (js, css, etc.)
-            // This prevents MIME type errors when files are missing
-            if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|json|svg)$/)) {
-                return res.status(404).send('Not found');
-            }
-
-            res.sendFile(path.join(buildPath, 'index.html'));
-        });
-    } else {
-        console.error('Production mode: Frontend build not found! Static files will not be served.');
-        // Debug info endpoint - ALWAYS enabled if buildPath is missing
-        app.get('*', (req, res) => {
-            const debugInfo = {
-                error: 'Frontend build not found',
-                cwd: process.cwd(),
-                dirname: __dirname,
-                attempts: [
-                    path.join(__dirname, '../../dist'),
-                    path.join(__dirname, '../dist'),
-                    path.join(process.cwd(), 'dist'),
-                    path.join(process.cwd(), '../dist'),
-                ],
-                structure_at_cwd: fs.readdirSync(process.cwd()),
-                structure_at_parent: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible'
-            };
-            res.status(500).json(debugInfo);
-        });
-    }
+        res.sendFile(path.join(buildPath, 'index.html'));
+    });
 } else {
-    console.log('Development mode: API server only. Frontend served via Vite.');
+    console.error('Frontend build not found at:', buildPath);
+    app.get('/', (req, res) => {
+        res.status(500).json({
+            error: 'Frontend build not found',
+            expectedPath: buildPath,
+            dirname: __dirname,
+            cwd: process.cwd(),
+            dirContents: fs.existsSync(__dirname) ? fs.readdirSync(__dirname) : 'dirname not found'
+        });
+    });
 }
 
 // Error Handling Middleware
-// Handle JSON parsing errors
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
         return res.status(400).json({
@@ -191,21 +101,16 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     next(err);
 });
 
-// Global error handler - ensures all errors return JSON
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error('Error:', err);
-
     const statusCode = err.statusCode || err.status || 500;
-    const message = err.message || 'Internal Server Error';
-
     res.status(statusCode).json({
         error: err.name || 'Error',
-        message: message,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+        message: err.message || 'Internal Server Error',
     });
 });
 
-// 404 Handler for API routes
+// 404 Handler
 app.use((req, res) => {
     res.status(404).json({ message: 'Not Found' });
 });

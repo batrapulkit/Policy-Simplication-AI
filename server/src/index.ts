@@ -16,13 +16,26 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 1. Security Headers (Helmet)
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.googletagmanager.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            connectSrc: ["'self'", "https://www.googletagmanager.com", "https://*.supabase.co", "https://api.openai.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+}));
 
 // 2. CORS Configuration
 app.use(cors(corsOptions));
 
 // 3. Body & Cookie Parsing
-app.use(express.json({ limit: '50mb' })); // Limit body size to 50mb for PDF text
+app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
 
 // 4. Global Rate Limiting
@@ -31,7 +44,10 @@ app.use('/api', apiLimiter);
 // 5. Routes
 
 // Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../../dist')));
+const buildPath = path.join(__dirname, '../../dist');
+console.log('Serving static files from:', buildPath);
+
+app.use(express.static(buildPath));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -51,7 +67,12 @@ app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
     }
-    res.sendFile(path.join(__dirname, '../../dist/index.html'));
+    const indexPath = path.join(buildPath, 'index.html');
+    if (!require('fs').existsSync(indexPath)) {
+        console.error('Frontend build not found at:', indexPath);
+        return res.status(404).send('Frontend build not found. Please run npm run build.');
+    }
+    res.sendFile(indexPath);
 });
 
 // 404 Handler for API routes

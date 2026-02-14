@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
 
 // Import configs and middleware
 import { corsOptions } from './config/corsOptions';
@@ -29,11 +30,10 @@ app.use('/api', apiLimiter);
 
 // 5. Routes
 
-// Public Routes
-app.get('/', (req, res) => {
-    res.send('Secure API is running');
-});
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../../dist')));
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 
@@ -45,33 +45,16 @@ app.get('/api/protected', authMiddleware, (req, res) => {
     });
 });
 
-// Error Handling Middleware
-// Handle JSON parsing errors
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (err instanceof SyntaxError && 'body' in err) {
-        return res.status(400).json({
-            error: 'Invalid JSON',
-            message: 'Request body contains invalid JSON'
-        });
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return next();
     }
-    next(err);
+    res.sendFile(path.join(__dirname, '../../dist/index.html'));
 });
 
-// Global error handler - ensures all errors return JSON
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error('Error:', err);
-
-    const statusCode = err.statusCode || err.status || 500;
-    const message = err.message || 'Internal Server Error';
-
-    res.status(statusCode).json({
-        error: err.name || 'Error',
-        message: message,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
-});
-
-// 404 Handler
+// 404 Handler for API routes
 app.use((req, res) => {
     res.status(404).json({ message: 'Not Found' });
 });

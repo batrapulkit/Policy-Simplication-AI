@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 
 // Import configs and middleware
 import { corsOptions } from './config/corsOptions';
@@ -14,6 +15,8 @@ import aiRoutes from './routes/ai';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+// DigitalOcean sets PORT, use that to detect production, or NODE_ENV
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.PORT;
 
 // 1. Security Headers (Helmet)
 app.use(helmet({
@@ -42,55 +45,6 @@ app.use(cookieParser());
 app.use('/api', apiLimiter);
 
 // 5. Routes
-
-// Serve static files from the React app
-// Debugging: Log directory structure
-import fs from 'fs';
-
-// Try to resolve buildPath from multiple common locations
-let buildPath = path.join(__dirname, '../../dist');
-if (!fs.existsSync(buildPath)) {
-    // Try relative to CWD
-    buildPath = path.join(process.cwd(), '../dist');
-}
-
-console.log('DEBUG: __dirname is:', __dirname);
-console.log('DEBUG: CWD is:', process.cwd());
-console.log('DEBUG: buildPath resolved to:', buildPath);
-
-try {
-    if (fs.existsSync(buildPath)) {
-        console.log('DEBUG: buildPath exists. Contents:', fs.readdirSync(buildPath));
-        const assetsPath = path.join(buildPath, 'assets');
-        if (fs.existsSync(assetsPath)) {
-            console.log('DEBUG: assets folder exists. Contents:', fs.readdirSync(assetsPath));
-        } else {
-            console.log('DEBUG: assets folder NOT found at:', assetsPath);
-        }
-    } else {
-        console.error('DEBUG: buildPath NOT found at:', buildPath);
-        // Fallback: try to find dist in other common locations relative to current working directory
-        console.error('DEBUG: Root contents:', fs.readdirSync(path.join(process.cwd(), '../')));
-    }
-} catch (err) {
-    console.error('DEBUG: Error checking filesystem:', err);
-}
-
-app.get('/debug-filesystem', (req, res) => {
-    const debugInfo = {
-        cwd: process.cwd(),
-        dirname: __dirname,
-        buildPath: buildPath,
-        buildPathExists: fs.existsSync(buildPath),
-        buildPathContents: fs.existsSync(buildPath) ? fs.readdirSync(buildPath) : [],
-        parentDirContents: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible',
-        serverSrcContents: fs.existsSync(path.join(__dirname, '../')) ? fs.readdirSync(path.join(__dirname, '../')) : 'Server src not accessible'
-    };
-    res.json(debugInfo);
-});
-
-app.use(express.static(buildPath));
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
@@ -103,27 +57,93 @@ app.get('/api/protected', authMiddleware, (req, res) => {
     });
 });
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) {
-        return next();
+// Serve static files from the React app (Production Only)
+if (isProduction) {
+    // Helper to find the frontend build directory
+    const findBuildPath = () => {
+        const potentialPaths = [
+            path.join(__dirname, '../../dist'), // Standard structure (server/dist -> ../../dist)
+            path.join(__dirname, '../dist'), // Sibling to src (server/src -> ../dist)
+            path.join(process.cwd(), 'dist'), // Root build relative to CWD
+            path.join(process.cwd(), '../dist'),
+        ];
+
+        for (const p of potentialPaths) {
+            if (fs.existsSync(path.join(p, 'index.html'))) {
+                return p;
+            }
+        }
+        return null;
+    };
+
+    const buildPath = findBuildPath();
+
+    if (buildPath) {
+        console.log('Production mode: Serving static files from:', buildPath);
+        app.use(express.static(buildPath));
+
+        // The "catchall" handler: for any request that doesn't
+        // match one above, send back React's index.html file.
+        app.get('*', (req, res, next) => {
+            if (req.path.startsWith('/api')) {
+                return next();
+            }
+
+            // Do NOT serve index.html for static assets (js, css, etc.)
+            // This prevents MIME type errors when files are missing
+            if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|json|svg)$/)) {
+                return res.status(404).send('Not found');
+            }
+
+            res.sendFile(path.join(buildPath, 'index.html'));
+        });
+    } else {
+        console.error('Production mode: Frontend build not found! Static files will not be served.');
+        // Debug info endpoint
+        app.get('/debug-filesystem', (req, res) => {
+            const debugInfo = {
+                cwd: process.cwd(),
+                dirname: __dirname,
+                attempts: [
+                    path.join(__dirname, '../../dist'),
+                    path.join(__dirname, '../dist'),
+                    path.join(process.cwd(), 'dist'),
+                    path.join(process.cwd(), '../dist'),
+                ],
+                structure_at_cwd: fs.readdirSync(process.cwd()),
+                structure_at_parent: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible'
+            };
+            res.status(500).json(debugInfo);
+        });
     }
-    const indexPath = path.join(buildPath, 'index.html');
-    if (!fs.existsSync(indexPath)) {
-        console.error('Frontend build not found at:', indexPath);
-        // Return debug info to client
-        const debugInfo = {
-            error: 'Frontend build not found',
-            resolvedPath: buildPath,
-            cwd: process.cwd(),
-            dirname: __dirname,
-            structure_at_cwd: fs.readdirSync(process.cwd()),
-            structure_at_parent: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible'
-        };
-        return res.status(500).json(debugInfo);
+} else {
+    console.log('Development mode: API server only. Frontend served via Vite.');
+}
+
+// Error Handling Middleware
+// Handle JSON parsing errors
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({
+            error: 'Invalid JSON',
+            message: 'Request body contains invalid JSON'
+        });
     }
-    res.sendFile(indexPath);
+    next(err);
+});
+
+// Global error handler - ensures all errors return JSON
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Error:', err);
+
+    const statusCode = err.statusCode || err.status || 500;
+    const message = err.message || 'Internal Server Error';
+
+    res.status(statusCode).json({
+        error: err.name || 'Error',
+        message: message,
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
 });
 
 // 404 Handler for API routes

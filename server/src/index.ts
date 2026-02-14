@@ -76,6 +76,19 @@ try {
     console.error('DEBUG: Error checking filesystem:', err);
 }
 
+app.get('/debug-filesystem', (req, res) => {
+    const debugInfo = {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        buildPath: buildPath,
+        buildPathExists: fs.existsSync(buildPath),
+        buildPathContents: fs.existsSync(buildPath) ? fs.readdirSync(buildPath) : [],
+        parentDirContents: fs.existsSync(path.join(process.cwd(), '../')) ? fs.readdirSync(path.join(process.cwd(), '../')) : 'Parent not accessible',
+        serverSrcContents: fs.existsSync(path.join(__dirname, '../')) ? fs.readdirSync(path.join(__dirname, '../')) : 'Server src not accessible'
+    };
+    res.json(debugInfo);
+});
+
 app.use(express.static(buildPath));
 
 // API Routes

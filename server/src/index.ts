@@ -66,6 +66,7 @@ if (isProduction) {
             path.join(__dirname, '../dist'), // Sibling to src (server/src -> ../dist)
             path.join(process.cwd(), 'dist'), // Root build relative to CWD
             path.join(process.cwd(), '../dist'),
+            path.join(__dirname, '../../../dist'), // One level up
         ];
 
         for (const p of potentialPaths) {
@@ -73,6 +74,45 @@ if (isProduction) {
                 return p;
             }
         }
+
+        // Recursive search fallback (manual implementation)
+        try {
+            const root = path.resolve(__dirname, '../../');
+
+            // Manual recursive function to avoid TS/Node version issues
+            const findDist = (dir: string, depth: number): string | null => {
+                if (depth > 3) return null;
+                try {
+                    const files = fs.readdirSync(dir, { withFileTypes: true });
+                    for (const file of files) {
+                        const fullPath = path.join(dir, file.name);
+                        if (file.isDirectory()) {
+                            // Check if this directory is the 'dist' folder we are looking for
+                            if (file.name === 'dist' && fs.existsSync(path.join(fullPath, 'index.html'))) {
+                                return fullPath;
+                            }
+                            // Recurse, but skip node_modules and hidden dotfiles
+                            if (file.name !== 'node_modules' && !file.name.startsWith('.')) {
+                                const found = findDist(fullPath, depth + 1);
+                                if (found) return found;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // Ignore access errors
+                }
+                return null;
+            };
+
+            const found = findDist(root, 0);
+            if (found) {
+                return found;
+            }
+
+        } catch (e) {
+            console.error('Recursive search failed', e);
+        }
+
         return null;
     };
 

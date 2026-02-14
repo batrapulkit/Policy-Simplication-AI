@@ -99,9 +99,10 @@ if (isProduction) {
         });
     } else {
         console.error('Production mode: Frontend build not found! Static files will not be served.');
-        // Debug info endpoint
-        app.get('/debug-filesystem', (req, res) => {
+        // Debug info endpoint - ALWAYS enabled if buildPath is missing
+        app.get('*', (req, res) => {
             const debugInfo = {
+                error: 'Frontend build not found',
                 cwd: process.cwd(),
                 dirname: __dirname,
                 attempts: [
